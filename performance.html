@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N배송 실적 관리</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#f5f5f3;--surface:#fff;--surface2:#f0efeb;
+  --border:rgba(0,0,0,.08);--border-md:rgba(0,0,0,.14);
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#9a9994;
+  --green:#3B6D11;--green-bg:#EAF3DE;
+  --amber:#854F0B;--amber-bg:#FAEEDA;
+  --red:#A32D2D;--red-bg:#FCEBEB;
+  --blue:#185FA5;--blue-bg:#E6F1FB;
+  --naver:#03c75a;
+  --r:8px;--rl:12px;
+  --font:'Apple SD Gothic Neo','Malgun Gothic',-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+.header{background:var(--surface);border-bottom:.5px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:50}
+.hlogo{width:28px;height:28px;background:var(--text);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.htitle{font-size:14px;font-weight:700;margin-left:10px}
+.back-link{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:11px;border:.5px solid var(--border-md);color:var(--text2);background:var(--surface2);text-decoration:none;white-space:nowrap}
+.back-link:hover{background:#e8e8e5}
+.main{padding:20px 24px;max-width:1280px;margin:0 auto}
+.card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:14px}
+.perf-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.perf-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--rl);padding:16px;text-align:center}
+.perf-card .pv{font-size:26px;font-weight:700;margin:4px 0;letter-spacing:-.5px}
+.perf-card .pl{font-size:11px;color:var(--text3);font-weight:600}
+.perf-card .ps{font-size:10px;color:var(--text3);margin-top:2px}
+.pv.up{color:var(--green)}.pv.down{color:var(--red)}
+.filter-bar{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.filter-bar select,.filter-bar input{padding:5px 10px;font-size:12px;border:.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);color:var(--text);height:30px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-size:11px;font-weight:500;color:var(--text2);text-align:left;padding:6px 10px;border-bottom:.5px solid var(--border);white-space:nowrap;background:var(--surface2)}
+td{padding:8px 10px;border-bottom:.5px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.num{text-align:right}
+.growth-up{color:var(--green);font-weight:600}.growth-down{color:var(--red);font-weight:600}
+.mgd{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;display:inline-block}
+.mgd.y{background:var(--green-bg);color:#27500A}.mgd.n{background:var(--surface2);color:var(--text3)}
+.stdb-tag{background:var(--amber-bg);color:#633806;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;margin-left:3px}
+.theme-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:var(--blue-bg);color:#0C447C;margin-right:4px}
+.chart-wrap{position:relative;width:100%;height:220px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.notice-bar{background:#e6faf0;border:.5px solid #9fe5c5;border-radius:var(--r);padding:10px 14px;font-size:12px;color:#026b35;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+@media(max-width:768px){.two-col,.perf-kpi{grid-template-columns:1fr}.main{padding:14px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center">
+    <div class="hlogo">N</div>
+    <div class="htitle">N배송 실적 관리</div>
+    <span style="margin-left:12px;font-size:11px;color:var(--text3)">Live 완료 셀러 대상 GMV · 성장률 분석</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <a href="index.html" class="back-link">← 영업 대시보드로</a>
+    <span style="font-size:11px;color:var(--text3);padding:3px 10px;border-radius:20px;border:.5px solid var(--border-md);background:var(--surface2)">2026.03.27 기준</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="notice-bar">이 화면은 <strong>입점(Live) 완료된 셀러</strong>를 대상으로 N배송 GMV와 성장률을 모니터링합니다. 영업·온보딩 진행 중인 셀러는 포함되지 않습니다.</div>
+
+  <div class="filter-bar">
+    <select><option selected>2026년 3월</option><option>2026년 2월</option><option>2026년 1월</option></select>
+    <select><option selected>전체 카테고리</option><option>식품</option><option>신선식품</option><option>생필품</option><option>뷰티</option></select>
+    <select><option selected>전체 관리구분</option><option>관리</option><option>미관리</option></select>
+    <select><option selected>전체 DB 테마</option><option>전략지원 DB</option></select>
+    <input type="text" placeholder="셀러명 검색" style="width:150px">
+    <button style="padding:5px 14px;font-size:12px;background:var(--text);color:#fff;border:none;border-radius:var(--r);cursor:pointer">조회</button>
+    <button style="padding:5px 12px;font-size:12px;border:.5px solid var(--border-md);border-radius:var(--r);background:var(--surface);cursor:pointer;margin-left:auto">📥 Export</button>
+  </div>
+
+  <div class="perf-kpi">
+    <div class="perf-card" style="border-top:2.5px solid var(--blue)">
+      <div class="pl">입점 완료 셀러 수</div>
+      <div class="pv" style="color:var(--blue)">11</div>
+      <div class="ps">입고 완료 기준</div>
+    </div>
+    <div class="perf-card" style="border-top:2.5px solid var(--text2)">
+      <div class="pl">최근 3개월 월평균 스토어 GMV</div>
+      <div class="pv">₩2.8B</div>
+      <div class="ps">전체 셀러 합산</div>
+    </div>
+    <div class="perf-card" style="border-top:2.5px solid var(--naver)">
+      <div class="pl">최근 3개월 월평균 N배송 GMV</div>
+      <div class="pv up">₩680M</div>
+      <div class="ps">N배송 거래액</div>
+    </div>
+    <div class="perf-card" style="border-top:2.5px solid var(--amber)">
+      <div class="pl">최근 3개월 평균 성장률</div>
+      <div class="pv up">+18.5%</div>
+      <div class="ps">N배송 GMV 기준</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px">월별 N배송 GMV 추이 (상위 5개 셀러)</div>
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--text2);margin-bottom:8px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#534AB7;display:inline-block"></span>LG생활건강</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;display:inline-block"></span>CJ제일제당</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;display:inline-block"></span>오리온</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#BA7517;display:inline-block"></span>풀무원</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#888780;display:inline-block"></span>남양유업</span>
+      </div>
+      <div class="chart-wrap"><canvas id="gmv-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px">셀러별 N배송 GMV 비중</div>
+      <div class="chart-wrap"><canvas id="pie-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700">셀러별 실적 현황 <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:var(--green-bg);color:#27500A">11건</span></div>
+      <div style="font-size:11px;color:var(--text3)">입고 완료 셀러 대상 · N배송 GMV 기준 정렬</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th><th>셀러ID</th><th>셀러명</th><th>카테고리</th><th>관리구분</th><th>DB 테마</th>
+            <th style="text-align:right;background:#e8f5e9;color:#2e7d32">최근3개월<br>월평균 스토어 GMV</th>
+            <th style="text-align:right;background:#e8f5e9;color:#2e7d32">최근3개월<br>월평균 N배송 GMV</th>
+            <th style="text-align:center;background:#fff3e0;color:#e65100">전월 대비<br>성장률</th>
+            <th style="text-align:center;background:#fff3e0;color:#e65100">3개월<br>평균 성장률</th>
+            <th>입고일</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td style="color:var(--blue);cursor:pointer;font-weight:600">SL-20260010</td><td><b>LG생활건강</b></td><td>생필품</td><td><span class="mgd y">관리</span><span class="stdb-tag">전략DB</span></td><td><span class="theme-badge">전략지원</span></td><td class="num">₩120,000,000</td><td class="num" style="color:var(--green);font-weight:700">₩42,000,000</td><td style="text-align:center"><span class="growth-up">+22.4%</span></td><td style="text-align:center"><span class="growth-up">+25.1%</span></td><td>2026-02-15</td></tr>
+          <tr><td>2</td><td style="color:var(--blue);cursor:pointer;font-weight:600">SL-20260004</td><td><b>CJ제일제당</b></td><td>식품</td><td><span class="mgd y">관리</span><span class="stdb-tag">전략DB</span></td><td><span class="theme-badge">전략지원</span></td><td class="num">₩89,000,000</td><td class="num" style="color:var(--green);font-weight:700">₩28,500,000</td><td style="text-align:center"><span class="growth-up">+15.3%</span></td><td style="text-align:center"><span class="growth-up">+18.7%</span></td><td>2026-02-28</td></tr>
+          <tr><td>3</td><td style="color:var(--blue);cursor:pointer;font-weight:600">SL-20260015</td><td><b>오리온</b></td><td>식품</td><td><span class="mgd y">관리</span></td><td>-</td><td class="num">₩35,000,000</td><td class="num" style="color:var(--green);font-weight:700">₩9,800,000</td><td style="text-align:center"><span class="growth-up">+6.2%</span></td><td style="text-align:center"><span class="growth-up">+11.4%</span></td><td>2026-01-20</td></tr>
+          <tr><td>4</td><td style="color:var(--blue);cursor:pointer;font-weight:600">SL-20260012</td><td><b>남양유업</b></td><td>신선식품</td><td><span class="mgd y">관리</span></td><td>-</td><td class="num">₩22,000,000</td><td class="num" style="color:var(--green);font-weight:700">₩6,100,000</td><td style="text-align:center"><span class="growth-down">-2.1%</span></td><td style="text-align:center"><span class="growth-up">+5.8%</span></td><td>2026-02-10</td></tr>
+          <tr><td>5</td><td style="color:var(--blue);cursor:pointer;font-weight:600">SL-20260001</td><td><b>풀무원</b></td><td>신선식품</td><td><span class="mgd y">관리</span><span class="stdb-tag">전략DB</span></td><td><span class="theme-badge">전략지원</span></td><td class="num">₩15,200,000</td><td class="num" style="color:var(--green);font-weight:700">₩5,800,000</td><td style="text-align:center"><span class="growth-up">+12.8%</span></td><td style="text-align:center"><span class="growth-up">+14.2%</span></td><td>2026-03-05</td></tr>
+          <tr><td>6</td><td style="color:var(--blue);cursor:pointer;font-weight:600">SL-20260007</td><td><b>Biospan LLC.</b></td><td>신선식품</td><td><span class="mgd n">미관리</span></td><td>-</td><td class="num">₩8,500,000</td><td class="num" style="color:var(--green);font-weight:700">₩3,200,000</td><td style="text-align:center"><span class="growth-up">+8.5%</span></td><td style="text-align:center"><span class="growth-up">+10.3%</span></td><td>2026-03-22</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700">DB별 실적 현황 (전략지원 DB) <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:var(--blue-bg);color:#0C447C">8건</span></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>상품 PID</th><th>상품명</th><th>셀러명</th>
+            <th style="text-align:right;background:#e8f5e9;color:#2e7d32">최근3개월<br>월평균 스토어 GMV</th>
+            <th style="text-align:right;background:#e8f5e9;color:#2e7d32">최근3개월<br>월평균 N배송 GMV</th>
+            <th style="text-align:center;background:#fff3e0;color:#e65100">전월 대비</th>
+            <th style="text-align:center;background:#fff3e0;color:#e65100">3개월 평균</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>PID-002100</td><td>CJ 햇반 210g x 12</td><td>CJ제일제당</td><td class="num">₩18,000,000</td><td class="num" style="color:var(--green);font-weight:700">₩8,200,000</td><td style="text-align:center"><span class="growth-up">+18.2%</span></td><td style="text-align:center"><span class="growth-up">+22.5%</span></td></tr>
+          <tr><td>PID-004200</td><td>LG 엘라스틴 샴푸 500ml</td><td>LG생활건강</td><td class="num">₩25,000,000</td><td class="num" style="color:var(--green);font-weight:700">₩12,500,000</td><td style="text-align:center"><span class="growth-up">+25.8%</span></td><td style="text-align:center"><span class="growth-up">+28.1%</span></td></tr>
+          <tr><td>PID-001234</td><td>풀무원 두부 300g</td><td>풀무원</td><td class="num">₩5,200,000</td><td class="num" style="color:var(--green);font-weight:700">₩2,100,000</td><td style="text-align:center"><span class="growth-up">+10.5%</span></td><td style="text-align:center"><span class="growth-up">+12.8%</span></td></tr>
+          <tr><td>PID-004201</td><td>LG 페리오 치약 150g</td><td>LG생활건강</td><td class="num">₩12,000,000</td><td class="num" style="color:var(--green);font-weight:700">₩5,800,000</td><td style="text-align:center"><span class="growth-up">+14.3%</span></td><td style="text-align:center"><span class="growth-up">+16.9%</span></td></tr>
+          <tr><td>PID-002101</td><td>CJ 비비고 만두 350g</td><td>CJ제일제당</td><td class="num">₩15,500,000</td><td class="num" style="color:var(--green);font-weight:700">₩6,300,000</td><td style="text-align:center"><span class="growth-down">-1.2%</span></td><td style="text-align:center"><span class="growth-up">+8.4%</span></td></tr>
+          <tr><td>PID-001235</td><td>풀무원 콩나물 200g</td><td>풀무원</td><td class="num">₩3,800,000</td><td class="num" style="color:var(--green);font-weight:700">₩1,500,000</td><td style="text-align:center"><span class="growth-up">+7.1%</span></td><td style="text-align:center"><span class="growth-up">+9.2%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const months=['1월','2월','3월'];
+new Chart(document.getElementById('gmv-chart'),{
+  type:'line',
+  data:{labels:months,datasets:[
+    {label:'LG생활건강',data:[35000000,38000000,42000000],borderColor:'#534AB7',backgroundColor:'transparent',tension:.3,pointRadius:4,borderWidth:2},
+    {label:'CJ제일제당',data:[24000000,26500000,28500000],borderColor:'#378ADD',backgroundColor:'transparent',tension:.3,pointRadius:4,borderWidth:2},
+    {label:'오리온',data:[8500000,9200000,9800000],borderColor:'#1D9E75',backgroundColor:'transparent',tension:.3,pointRadius:4,borderWidth:2},
+    {label:'풀무원',data:[4800000,5300000,5800000],borderColor:'#BA7517',backgroundColor:'transparent',tension:.3,pointRadius:4,borderWidth:2},
+    {label:'남양유업',data:[6400000,6300000,6100000],borderColor:'#888780',backgroundColor:'transparent',tension:.3,pointRadius:4,borderWidth:2}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:11},color:'#888780'},border:{display:false}},
+      y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},color:'#888780',callback:v=>v>=1000000?'₩'+(v/1000000).toFixed(0)+'M':'₩'+v},border:{display:false}}
+    }}
+});
+new Chart(document.getElementById('pie-chart'),{
+  type:'doughnut',
+  data:{labels:['LG생활건강','CJ제일제당','오리온','남양유업','풀무원','기타'],
+    datasets:[{data:[42,28.5,9.8,6.1,5.8,7.8],backgroundColor:['#534AB7','#378ADD','#1D9E75','#888780','#BA7517','#B4B2A9'],borderWidth:1,borderColor:'#fff'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:12}}}}
+});
+</script>
+</body>
+</html>
